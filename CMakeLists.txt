@@ -44,7 +44,8 @@ target_link_libraries(screamdeck PRIVATE hidapi::hidapi libjpeg-turbo::turbojpeg
 
  add_executable(screamdeck_example)
 
- target_link_libraries(screamdeck_example PUBLIC screamdeck)
+ target_link_libraries(screamdeck_example PUBLIC screamdeck libjpeg-turbo::turbojpeg-static)
+
 
  target_sources(screamdeck_example PRIVATE
 	"example/screamdeck_example.c")

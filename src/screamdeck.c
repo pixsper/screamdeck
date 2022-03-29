@@ -127,12 +127,27 @@ bool scdk_set_image(scdk_device_t device, const unsigned char* image_buffer, scd
 		{
 			for (int y = 0; y < SCDK_KEY_IMAGE_HEIGHT; ++y)
 			{
+				const int line = ((key_y * (SCDK_KEY_IMAGE_HEIGHT + SCDK_KEY_GAP_WIDTH)) + SCDK_KEY_IMAGE_HEIGHT) - y;
+				const int row = (key_x * (SCDK_KEY_IMAGE_WIDTH + SCDK_KEY_GAP_WIDTH)) * pixel_length;
+
 				const unsigned char* src = image_buffer
-					+ (((key_y * SCDK_KEY_IMAGE_HEIGHT + SCDK_KEY_GAP_WIDTH) + y) * key_image_line_length)
-					+ (key_x * (SCDK_KEY_IMAGE_WIDTH + SCDK_KEY_GAP_WIDTH));
+					+ (line * (SCDK_IMAGE_WIDTH * pixel_length))
+					+ row
+					+ key_image_line_length;
 				unsigned char* dst = device_impl->key_image_src_buffer + (y * key_image_line_length);
 
-				memcpy(dst, src, key_image_line_length);
+				unsigned char r, g, b;
+
+				for (size_t i = 0; i < key_image_line_length; i += 3)
+				{
+					r = *src--;
+					g = *src--;
+					b = *src--;
+
+					*dst++ = r;
+					*dst++ = b;
+					*dst++ = g;
+				}
 			}
 
 			if (!scdk_set_key_image(device, key_x, key_y, device_impl->key_image_src_buffer, pixel_format))

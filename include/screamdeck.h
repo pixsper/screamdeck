@@ -25,6 +25,9 @@
 #define SCDK_KEY_IMAGE_WIDTH 96
 #define SCDK_KEY_GAP_WIDTH 38
 
+#define SCDK_KEY_GRID_WIDTH 8
+#define SCDK_KEY_GRID_HEIGHT 4
+
 
 typedef struct scdk_device_info_t
 {
@@ -39,15 +42,15 @@ typedef void* scdk_device_t;
 typedef enum scdk_pixel_format_e
 {
 	SCDK_PIXEL_FORMAT_RGB = 0,
-	SCDK_PIXEL_FORMAT_BGR,
-	SCDK_PIXEL_FORMAT_RGBX,
-	SCDK_PIXEL_FORMAT_BGRX,
-	SCDK_PIXEL_FORMAT_XBGR,
-	SCDK_PIXEL_FORMAT_XRGB,
-	SCDK_PIXEL_FORMAT_RGBA,
-	SCDK_PIXEL_FORMAT_BGRA,
-	SCDK_PIXEL_FORMAT_ABGR,
-	SCDK_PIXEL_FORMAT_ARGB,
+	SCDK_PIXEL_FORMAT_BGR = 1,
+	SCDK_PIXEL_FORMAT_RGBX = 2,
+	SCDK_PIXEL_FORMAT_BGRX = 3,
+	SCDK_PIXEL_FORMAT_XBGR = 4,
+	SCDK_PIXEL_FORMAT_XRGB = 5,
+	SCDK_PIXEL_FORMAT_RGBA = 6,
+	SCDK_PIXEL_FORMAT_BGRA = 7,
+	SCDK_PIXEL_FORMAT_ABGR = 8,
+	SCDK_PIXEL_FORMAT_ARGB = 9,
 
 } scdk_pixel_format_e;
 
@@ -60,9 +63,19 @@ DLL_API bool scdk_open(scdk_device_t* p_device, const wchar_t* serial_number);
 
 DLL_API void scdk_free(scdk_device_t device);
 
+DLL_API bool scdk_read_key(scdk_device_t device, bool* key_state_buffer, int key_state_buffer_length, int timeout_ms);
+
 DLL_API bool scdk_set_image(scdk_device_t device, const unsigned char* image_buffer, scdk_pixel_format_e pixel_format);
+
+DLL_API bool scdk_set_image_24(scdk_device_t device, const unsigned char* image_buffer, scdk_pixel_format_e pixel_format);
+
+DLL_API bool scdk_set_image_32(scdk_device_t device, const unsigned char* image_buffer, scdk_pixel_format_e pixel_format);
 
 DLL_API bool scdk_set_key_image(scdk_device_t device, int key_x, int key_y,
 	const unsigned char* image_buffer, scdk_pixel_format_e pixel_format);
+
+DLL_API bool scdk_set_brightness(scdk_device_t device, int brightness_percentage);
+
+DLL_API bool scdk_set_screensaver(scdk_device_t device);
 
 #endif // SCREAMDECK_H

@@ -65,14 +65,17 @@ DLL_API void scdk_free(scdk_device_t device);
 
 DLL_API bool scdk_read_key(scdk_device_t device, bool* key_state_buffer, int key_state_buffer_length, int timeout_ms);
 
-DLL_API bool scdk_set_image(scdk_device_t device, const unsigned char* image_buffer, scdk_pixel_format_e pixel_format);
+DLL_API bool scdk_set_image(scdk_device_t device, const unsigned char* image_buffer, 
+	scdk_pixel_format_e pixel_format, int quality_percentage);
 
-DLL_API bool scdk_set_image_24(scdk_device_t device, const unsigned char* image_buffer, scdk_pixel_format_e pixel_format);
+DLL_API bool scdk_set_image_24(scdk_device_t device, const unsigned char* image_buffer, 
+	scdk_pixel_format_e pixel_format, int quality_percentage);
 
-DLL_API bool scdk_set_image_32(scdk_device_t device, const unsigned char* image_buffer, scdk_pixel_format_e pixel_format);
+DLL_API bool scdk_set_image_32(scdk_device_t device, const unsigned char* image_buffer, 
+	scdk_pixel_format_e pixel_format, int quality_percentage);
 
 DLL_API bool scdk_set_key_image(scdk_device_t device, int key_x, int key_y,
-	const unsigned char* image_buffer, scdk_pixel_format_e pixel_format);
+	const unsigned char* image_buffer, scdk_pixel_format_e pixel_format, int quality_percentage);
 
 DLL_API bool scdk_set_brightness(scdk_device_t device, int brightness_percentage);
 

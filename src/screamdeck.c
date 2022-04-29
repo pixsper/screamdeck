@@ -138,15 +138,17 @@ bool scdk_read_key(scdk_device_t device, bool* key_state_buffer, int key_state_b
 	return true;
 }
 
-bool scdk_set_image(scdk_device_t device, const unsigned char* image_buffer, scdk_pixel_format_e pixel_format)
+bool scdk_set_image(scdk_device_t device, const unsigned char* image_buffer, 
+	scdk_pixel_format_e pixel_format, int quality_percentage)
 {
 	if (pixel_format == SCDK_PIXEL_FORMAT_RGB || pixel_format == SCDK_PIXEL_FORMAT_BGR)
-		return scdk_set_image_24(device, image_buffer, pixel_format);
+		return scdk_set_image_24(device, image_buffer, pixel_format, quality_percentage);
 	else
-		return scdk_set_image_32(device, image_buffer, pixel_format);
+		return scdk_set_image_32(device, image_buffer, pixel_format, quality_percentage);
 }
 
-bool scdk_set_image_24(scdk_device_t device, const unsigned char* image_buffer, scdk_pixel_format_e pixel_format)
+bool scdk_set_image_24(scdk_device_t device, const unsigned char* image_buffer, 
+	scdk_pixel_format_e pixel_format, int quality_percentage)
 {
 	if (device == NULL || (pixel_format != SCDK_PIXEL_FORMAT_RGB && pixel_format != SCDK_PIXEL_FORMAT_BGR))
 		return false;
@@ -186,7 +188,7 @@ bool scdk_set_image_24(scdk_device_t device, const unsigned char* image_buffer, 
 				}
 			}
 
-			if (!scdk_set_key_image(device, key_x, key_y, device_impl->key_image_src_buffer, pixel_format))
+			if (!scdk_set_key_image(device, key_x, key_y, device_impl->key_image_src_buffer, pixel_format, quality_percentage))
 				return false;
 		}
 	}
@@ -194,7 +196,8 @@ bool scdk_set_image_24(scdk_device_t device, const unsigned char* image_buffer, 
 	return true;
 }
 
-bool scdk_set_image_32(scdk_device_t device, const unsigned char* image_buffer, scdk_pixel_format_e pixel_format)
+bool scdk_set_image_32(scdk_device_t device, const unsigned char* image_buffer, 
+	scdk_pixel_format_e pixel_format, int quality_percentage)
 {
 	if (device == NULL || pixel_format == SCDK_PIXEL_FORMAT_RGB || pixel_format == SCDK_PIXEL_FORMAT_BGR)
 		return false;
@@ -209,13 +212,13 @@ bool scdk_set_image_32(scdk_device_t device, const unsigned char* image_buffer, 
 		{
 			for (int y = 0; y < SCDK_KEY_IMAGE_HEIGHT; ++y)
 			{
-				const int line = ((key_y * (SCDK_KEY_IMAGE_HEIGHT + SCDK_KEY_GAP_WIDTH)) + SCDK_KEY_IMAGE_HEIGHT) - y;
+				const int line = ((key_y * (SCDK_KEY_IMAGE_HEIGHT + SCDK_KEY_GAP_WIDTH)) + SCDK_KEY_IMAGE_HEIGHT) - y - 1;
 				const int row = (key_x * (SCDK_KEY_IMAGE_WIDTH + SCDK_KEY_GAP_WIDTH)) * 4;
 
 				const int offset = (line * (SCDK_IMAGE_WIDTH * 4))
 				                   + row
 				                   + key_image_line_length
-				                   - 1;
+								   - 1;
 
 				const unsigned char* src = image_buffer + offset;
 				unsigned char* dst = device_impl->key_image_src_buffer + (y * key_image_line_length);
@@ -228,7 +231,7 @@ bool scdk_set_image_32(scdk_device_t device, const unsigned char* image_buffer, 
 					b = *src--;
 					g = *src--;
 					r = *src--;
-
+					
 					*dst++ = r;
 					*dst++ = g;
 					*dst++ = b;
@@ -236,7 +239,7 @@ bool scdk_set_image_32(scdk_device_t device, const unsigned char* image_buffer, 
 				}
 			}
 
-			if (!scdk_set_key_image(device, key_x, key_y, device_impl->key_image_src_buffer, pixel_format))
+			if (!scdk_set_key_image(device, key_x, key_y, device_impl->key_image_src_buffer, pixel_format, quality_percentage))
 				return false;
 		}
 	}
@@ -246,8 +249,8 @@ bool scdk_set_image_32(scdk_device_t device, const unsigned char* image_buffer, 
 
 
 
-bool scdk_set_key_image(scdk_device_t device, int key_x, int key_y,
-                        const unsigned char* image_buffer, scdk_pixel_format_e pixel_format)
+bool scdk_set_key_image(scdk_device_t device, int key_x, int key_y, const unsigned char* image_buffer, 
+	scdk_pixel_format_e pixel_format, int quality_percentage)
 {
 	if (device == NULL)
 		return false;
@@ -287,7 +290,7 @@ bool scdk_set_key_image(scdk_device_t device, int key_x, int key_y,
 	unsigned long dst_buffer_length;
 
 	tjCompress2(device_impl->jpeg_handle, image_buffer, SCDK_KEY_IMAGE_WIDTH, 0, SCDK_KEY_IMAGE_HEIGHT,
-	            turbo_pixel_format, &dst_buffer, &dst_buffer_length, TJSAMP_420, 80,TJFLAG_FASTDCT);
+	            turbo_pixel_format, &dst_buffer, &dst_buffer_length, TJSAMP_420, quality_percentage, TJFLAG_FASTDCT);
 
 	const int report_count = (dst_buffer_length + (SD_OUT_REPORT_IMAGE_LENGTH - 1)) / SD_OUT_REPORT_IMAGE_LENGTH;
 

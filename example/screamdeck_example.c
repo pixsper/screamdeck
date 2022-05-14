@@ -47,7 +47,9 @@ int main(int argc, char* argv[])
 
 	scdk_set_brightness(device, 100);
 
-	scdk_set_image(device, buffer, SCDK_PIXEL_FORMAT_RGB);
+	scdk_set_image(device, buffer, SCDK_PIXEL_FORMAT_RGB, 100);
+
+	scdk_set_image(device, buffer, SCDK_PIXEL_FORMAT_RGB, 100);
 
 	scdk_free(device);
 

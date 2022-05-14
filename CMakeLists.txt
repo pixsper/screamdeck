@@ -16,6 +16,7 @@ include(${CMAKE_BINARY_DIR}/conan.cmake)
 
 conan_cmake_configure(REQUIRES hidapi/0.11.2
 							   libjpeg-turbo/2.1.2
+							   xxhash/0.8.1
 					  IMPORTS "bin, *.dll -> ./"
 					  GENERATORS cmake_find_package)
 
@@ -28,6 +29,7 @@ conan_cmake_install(PATH_OR_REFERENCE .
 					
 find_package(hidapi)
 find_package(libjpeg-turbo)
+find_package(xxHash)
 
 add_library(screamdeck SHARED)
 
@@ -39,7 +41,7 @@ target_sources(screamdeck PRIVATE
 	"src/screamdeck.c"
  "example/screamdeck_example.c")
 
-target_link_libraries(screamdeck PRIVATE hidapi::hidapi libjpeg-turbo::turbojpeg-static)
+target_link_libraries(screamdeck PRIVATE hidapi::hidapi libjpeg-turbo::turbojpeg-static xxHash::xxhash)
 
 
  add_executable(screamdeck_example)

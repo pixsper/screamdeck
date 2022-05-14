@@ -4,6 +4,7 @@
 #include <string.h>
 #include <hidapi/hidapi.h>
 #include <turbojpeg.h>
+#include <xxhash.h>
 
 #define SD_VENDOR_ID 0x0fd9
 #define SD_XL_PRODUCT_ID 0x006c
@@ -27,6 +28,9 @@ typedef struct scdk_device_impl_t
 	unsigned char* hid_out_feature_report_buffer;
 	unsigned char* hid_out_report_buffer;
 	unsigned char* hid_in_report_buffer;
+
+	XXH64_hash_t* key_image_hashes;
+
 } scdk_device_impl_t;
 
 scdk_device_info_t* scdk_enumerate(void)
@@ -98,6 +102,7 @@ bool scdk_open(scdk_device_t* p_device, const wchar_t* serial_number)
 	device_impl->hid_out_feature_report_buffer = malloc(SD_OUT_FEATURE_REPORT_LENGTH);
 	device_impl->hid_out_report_buffer = malloc(SD_OUT_REPORT_LENGTH);
 	device_impl->hid_in_report_buffer = malloc(SD_IN_REPORT_LENGTH);
+	device_impl->key_image_hashes = malloc(SCDK_KEY_GRID_WIDTH * SCDK_KEY_GRID_HEIGHT * sizeof(XXH64_hash_t));
 
 	*p_device = device_impl;
 	return true;
@@ -119,6 +124,7 @@ void scdk_free(scdk_device_t device)
 	free(device_impl->hid_out_feature_report_buffer);
 	free(device_impl->hid_out_report_buffer);
 	free(device_impl->hid_in_report_buffer);
+	free(device_impl->key_image_hashes);
 
 	free(device_impl);
 }
@@ -188,8 +194,16 @@ bool scdk_set_image_24(scdk_device_t device, const unsigned char* image_buffer,
 				}
 			}
 
-			if (!scdk_set_key_image(device, key_x, key_y, device_impl->key_image_src_buffer, pixel_format, quality_percentage))
-				return false;
+			XXH64_hash_t* last_hash = device_impl->key_image_hashes + key_x + (key_y * SCDK_KEY_GRID_WIDTH);
+			const XXH64_hash_t hash = XXH64(device_impl->key_image_src_buffer, SCDK_KEY_IMAGE_WIDTH * SCDK_KEY_IMAGE_HEIGHT * 4, 0);
+
+			if (*last_hash != hash)
+			{
+				if (!scdk_set_key_image(device, key_x, key_y, device_impl->key_image_src_buffer, pixel_format, quality_percentage))
+					return false;
+
+				*last_hash = hash;
+			}
 		}
 	}
 
@@ -239,8 +253,16 @@ bool scdk_set_image_32(scdk_device_t device, const unsigned char* image_buffer,
 				}
 			}
 
-			if (!scdk_set_key_image(device, key_x, key_y, device_impl->key_image_src_buffer, pixel_format, quality_percentage))
-				return false;
+			XXH64_hash_t* last_hash = device_impl->key_image_hashes + key_x + (key_y * SCDK_KEY_GRID_WIDTH);
+			const XXH64_hash_t hash = XXH64(device_impl->key_image_src_buffer, SCDK_KEY_IMAGE_WIDTH * SCDK_KEY_IMAGE_HEIGHT * 4, 0);
+
+			if (*last_hash != hash)
+			{
+				if (!scdk_set_key_image(device, key_x, key_y, device_impl->key_image_src_buffer, pixel_format, quality_percentage))
+					return false;
+
+				*last_hash = hash;
+			}
 		}
 	}
 

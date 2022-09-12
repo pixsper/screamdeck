@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.19)
-project(screamdeck)
+project(screamdeck VERSION 0.1.0 DESCRIPTION "C library for fast output to Elgato Streamdeck display")
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR})
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR})
@@ -26,29 +26,39 @@ conan_cmake_install(PATH_OR_REFERENCE .
                     BUILD missing
                     REMOTE conancenter
                     SETTINGS ${settings})
-					
+
 find_package(hidapi)
 find_package(libjpeg-turbo)
 find_package(xxHash)
 
 add_library(screamdeck SHARED)
 
+set_target_properties(screamdeck PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties(screamdeck PROPERTIES SOVERSION 1)
+set_target_properties(screamdeck PROPERTIES PUBLIC_HEADER include/screamdeck.h)
+
 target_include_directories(screamdeck PUBLIC
+
 	"include"
+
 )
 
 target_sources(screamdeck PRIVATE
+
 	"src/screamdeck.c"
- "example/screamdeck_example.c")
+
+	"example/screamdeck_example.c")
 
 target_link_libraries(screamdeck PRIVATE hidapi::hidapi libjpeg-turbo::turbojpeg-static xxHash::xxhash)
 
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+	target_link_options(screamdeck PRIVATE "-Wl,--exclude-libs,ALL")
+endif()
 
- add_executable(screamdeck_example)
+add_executable(screamdeck_example)
 
- target_link_libraries(screamdeck_example PUBLIC screamdeck libjpeg-turbo::turbojpeg-static)
+target_link_libraries(screamdeck_example PUBLIC libjpeg-turbo::turbojpeg-static screamdeck)
 
+target_sources(screamdeck_example PRIVATE
 
- target_sources(screamdeck_example PRIVATE
 	"example/screamdeck_example.c")
-

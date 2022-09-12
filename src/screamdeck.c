@@ -30,7 +30,6 @@ typedef struct scdk_device_impl_t
 	unsigned char* hid_in_report_buffer;
 
 	XXH64_hash_t* key_image_hashes;
-
 } scdk_device_impl_t;
 
 scdk_device_info_t* scdk_enumerate(void)
@@ -134,18 +133,18 @@ bool scdk_read_key(scdk_device_t device, bool* key_state_buffer, int key_state_b
 	const scdk_device_impl_t* device_impl = device;
 
 	int bytes = hid_read_timeout(device_impl->device, device_impl->hid_in_report_buffer,
-								 SD_IN_REPORT_LENGTH, timeout_ms);
+	                             SD_IN_REPORT_LENGTH, timeout_ms);
 	if (bytes == -1)
 		return false;
 
-	for(int i = SD_IN_REPORT_HEADER_LENGTH; i < bytes && i + SD_IN_REPORT_HEADER_LENGTH < key_state_buffer_length; ++i)
+	for (int i = SD_IN_REPORT_HEADER_LENGTH; i < bytes && i + SD_IN_REPORT_HEADER_LENGTH < key_state_buffer_length; ++i)
 		key_state_buffer[i - SD_IN_REPORT_HEADER_LENGTH] = device_impl->hid_in_report_buffer[i] > 0;
 
 	return true;
 }
 
-bool scdk_set_image(scdk_device_t device, const unsigned char* image_buffer, 
-	scdk_pixel_format_e pixel_format, int quality_percentage)
+bool scdk_set_image(scdk_device_t device, const unsigned char* image_buffer,
+                    scdk_pixel_format_e pixel_format, int quality_percentage)
 {
 	if (pixel_format == SCDK_PIXEL_FORMAT_RGB || pixel_format == SCDK_PIXEL_FORMAT_BGR)
 		return scdk_set_image_24(device, image_buffer, pixel_format, quality_percentage);
@@ -153,8 +152,8 @@ bool scdk_set_image(scdk_device_t device, const unsigned char* image_buffer,
 		return scdk_set_image_32(device, image_buffer, pixel_format, quality_percentage);
 }
 
-bool scdk_set_image_24(scdk_device_t device, const unsigned char* image_buffer, 
-	scdk_pixel_format_e pixel_format, int quality_percentage)
+bool scdk_set_image_24(scdk_device_t device, const unsigned char* image_buffer,
+                       scdk_pixel_format_e pixel_format, int quality_percentage)
 {
 	if (device == NULL || (pixel_format != SCDK_PIXEL_FORMAT_RGB && pixel_format != SCDK_PIXEL_FORMAT_BGR))
 		return false;
@@ -173,9 +172,9 @@ bool scdk_set_image_24(scdk_device_t device, const unsigned char* image_buffer,
 				const int row = (key_x * (SCDK_KEY_IMAGE_WIDTH + SCDK_KEY_GAP_WIDTH)) * 3;
 
 				const int offset = (line * (SCDK_IMAGE_WIDTH * 3))
-				                   + row
-				                   + key_image_line_length
-								   - 1;
+					+ row
+					+ key_image_line_length
+					- 1;
 
 				const unsigned char* src = image_buffer + offset;
 				unsigned char* dst = device_impl->key_image_src_buffer + (y * key_image_line_length);
@@ -195,11 +194,13 @@ bool scdk_set_image_24(scdk_device_t device, const unsigned char* image_buffer,
 			}
 
 			XXH64_hash_t* last_hash = device_impl->key_image_hashes + key_x + (key_y * SCDK_KEY_GRID_WIDTH);
-			const XXH64_hash_t hash = XXH64(device_impl->key_image_src_buffer, SCDK_KEY_IMAGE_WIDTH * SCDK_KEY_IMAGE_HEIGHT * 4, 0);
+			const XXH64_hash_t hash = XXH64(device_impl->key_image_src_buffer,
+			                                SCDK_KEY_IMAGE_WIDTH * SCDK_KEY_IMAGE_HEIGHT * 4, 0);
 
 			if (*last_hash != hash)
 			{
-				if (!scdk_set_key_image(device, key_x, key_y, device_impl->key_image_src_buffer, pixel_format, quality_percentage))
+				if (!scdk_set_key_image(device, key_x, key_y, device_impl->key_image_src_buffer, pixel_format,
+				                        quality_percentage))
 					return false;
 
 				*last_hash = hash;
@@ -210,8 +211,8 @@ bool scdk_set_image_24(scdk_device_t device, const unsigned char* image_buffer,
 	return true;
 }
 
-bool scdk_set_image_32(scdk_device_t device, const unsigned char* image_buffer, 
-	scdk_pixel_format_e pixel_format, int quality_percentage)
+bool scdk_set_image_32(scdk_device_t device, const unsigned char* image_buffer,
+                       scdk_pixel_format_e pixel_format, int quality_percentage)
 {
 	if (device == NULL || pixel_format == SCDK_PIXEL_FORMAT_RGB || pixel_format == SCDK_PIXEL_FORMAT_BGR)
 		return false;
@@ -226,13 +227,14 @@ bool scdk_set_image_32(scdk_device_t device, const unsigned char* image_buffer,
 		{
 			for (int y = 0; y < SCDK_KEY_IMAGE_HEIGHT; ++y)
 			{
-				const int line = ((key_y * (SCDK_KEY_IMAGE_HEIGHT + SCDK_KEY_GAP_WIDTH)) + SCDK_KEY_IMAGE_HEIGHT) - y - 1;
+				const int line = ((key_y * (SCDK_KEY_IMAGE_HEIGHT + SCDK_KEY_GAP_WIDTH)) + SCDK_KEY_IMAGE_HEIGHT) - y -
+					1;
 				const int row = (key_x * (SCDK_KEY_IMAGE_WIDTH + SCDK_KEY_GAP_WIDTH)) * 4;
 
 				const int offset = (line * (SCDK_IMAGE_WIDTH * 4))
-				                   + row
-				                   + key_image_line_length
-								   - 1;
+					+ row
+					+ key_image_line_length
+					- 1;
 
 				const unsigned char* src = image_buffer + offset;
 				unsigned char* dst = device_impl->key_image_src_buffer + (y * key_image_line_length);
@@ -245,7 +247,7 @@ bool scdk_set_image_32(scdk_device_t device, const unsigned char* image_buffer,
 					b = *src--;
 					g = *src--;
 					r = *src--;
-					
+
 					*dst++ = r;
 					*dst++ = g;
 					*dst++ = b;
@@ -254,11 +256,13 @@ bool scdk_set_image_32(scdk_device_t device, const unsigned char* image_buffer,
 			}
 
 			XXH64_hash_t* last_hash = device_impl->key_image_hashes + key_x + (key_y * SCDK_KEY_GRID_WIDTH);
-			const XXH64_hash_t hash = XXH64(device_impl->key_image_src_buffer, SCDK_KEY_IMAGE_WIDTH * SCDK_KEY_IMAGE_HEIGHT * 4, 0);
+			const XXH64_hash_t hash = XXH64(device_impl->key_image_src_buffer,
+			                                SCDK_KEY_IMAGE_WIDTH * SCDK_KEY_IMAGE_HEIGHT * 4, 0);
 
 			if (*last_hash != hash)
 			{
-				if (!scdk_set_key_image(device, key_x, key_y, device_impl->key_image_src_buffer, pixel_format, quality_percentage))
+				if (!scdk_set_key_image(device, key_x, key_y, device_impl->key_image_src_buffer, pixel_format,
+				                        quality_percentage))
 					return false;
 
 				*last_hash = hash;
@@ -270,9 +274,8 @@ bool scdk_set_image_32(scdk_device_t device, const unsigned char* image_buffer,
 }
 
 
-
-bool scdk_set_key_image(scdk_device_t device, int key_x, int key_y, const unsigned char* image_buffer, 
-	scdk_pixel_format_e pixel_format, int quality_percentage)
+bool scdk_set_key_image(scdk_device_t device, int key_x, int key_y, const unsigned char* image_buffer,
+                        scdk_pixel_format_e pixel_format, int quality_percentage)
 {
 	if (device == NULL)
 		return false;
@@ -353,16 +356,41 @@ bool scdk_set_brightness(scdk_device_t device, int brightness_percentage)
 	const scdk_device_impl_t* device_impl = device;
 	unsigned char* p = device_impl->hid_out_report_buffer;
 
-	*p++ = 0x03; *p++ = 0x08; *p++ = SCDK_CLAMP(brightness_percentage, 0, 100); *p++ = 0x23;
-	*p++ = 0xB8; *p++ = 0x01; *p++ = 0x00; *p++ = 0x00;
-	*p++ = 0x00; *p++ = 0x00; *p++ = 0x00; *p++ = 0x00;
-	*p++ = 0x00; *p++ = 0x00; *p++ = 0x00; *p++ = 0x00;
-	*p++ = 0x00; *p++ = 0x00; *p++ = 0x00; *p++ = 0x00;
-	*p++ = 0x00; *p++ = 0x00; *p++ = 0x00; *p++ = 0x00;
-	*p++ = 0xA5; *p++ = 0x49; *p++ = 0xCD; *p++ = 0x02;
-	*p++ = 0xFE; *p++ = 0x7F; *p++ = 0x00; *p++ = 0x00;
+	*p++ = 0x03;
+	*p++ = 0x08;
+	*p++ = SCDK_CLAMP(brightness_percentage, 0, 100);
+	*p++ = 0x23;
+	*p++ = 0xB8;
+	*p++ = 0x01;
+	*p++ = 0x00;
+	*p++ = 0x00;
+	*p++ = 0x00;
+	*p++ = 0x00;
+	*p++ = 0x00;
+	*p++ = 0x00;
+	*p++ = 0x00;
+	*p++ = 0x00;
+	*p++ = 0x00;
+	*p++ = 0x00;
+	*p++ = 0x00;
+	*p++ = 0x00;
+	*p++ = 0x00;
+	*p++ = 0x00;
+	*p++ = 0x00;
+	*p++ = 0x00;
+	*p++ = 0x00;
+	*p++ = 0x00;
+	*p++ = 0xA5;
+	*p++ = 0x49;
+	*p++ = 0xCD;
+	*p++ = 0x02;
+	*p++ = 0xFE;
+	*p++ = 0x7F;
+	*p++ = 0x00;
+	*p++ = 0x00;
 
-	const int result = hid_send_feature_report(device_impl->device, device_impl->hid_out_report_buffer, SD_OUT_FEATURE_REPORT_LENGTH);
+	const int result = hid_send_feature_report(device_impl->device, device_impl->hid_out_report_buffer,
+	                                           SD_OUT_FEATURE_REPORT_LENGTH);
 	return result != -1;
 }
 
@@ -371,11 +399,13 @@ bool scdk_set_screensaver(scdk_device_t device)
 	const scdk_device_impl_t* device_impl = device;
 	unsigned char* p = device_impl->hid_out_report_buffer;
 
-	*p++ = 0x03; *p++ = 0x02;
+	*p++ = 0x03;
+	*p++ = 0x02;
 
 	while (p - device_impl->hid_out_report_buffer < SD_OUT_FEATURE_REPORT_LENGTH)
 		*p++ = 0;
 
-	const int result = hid_send_feature_report(device_impl->device, device_impl->hid_out_report_buffer, SD_OUT_FEATURE_REPORT_LENGTH);
+	const int result = hid_send_feature_report(device_impl->device, device_impl->hid_out_report_buffer,
+	                                           SD_OUT_FEATURE_REPORT_LENGTH);
 	return result != -1;
 }

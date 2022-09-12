@@ -23,7 +23,7 @@ int main(int argc, char* argv[])
 
 
 	unsigned long file_length;
-	FILE* file = fopen("../example/test.jpg", "rb");
+	FILE* file = fopen("../../../example/test.jpg", "rb");
 	if (!file)
 		return -1;
 

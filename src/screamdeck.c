@@ -88,7 +88,10 @@ bool scdk_open(scdk_device_t* p_device, const wchar_t* serial_number)
 {
 	hid_device* hid_d = hid_open(SD_VENDOR_ID, SD_XL_PRODUCT_ID, serial_number);
 	if (hid_d == NULL)
+	{
+		*p_device = NULL;
 		return false;
+	}
 
 	scdk_device_impl_t* device_impl = malloc(sizeof(scdk_device_impl_t));
 	if (device_impl == NULL)
@@ -128,40 +131,40 @@ void scdk_free(scdk_device_t device)
 	free(device_impl);
 }
 
-bool scdk_get_serial_number(scdk_device_t device, wchar_t* serial_number_buffer, size_t serial_number_buffer_length)
+bool scdk_get_serial_number(scdk_device_t device, wchar_t* serial_number, size_t serial_number_length)
 {
 	const scdk_device_impl_t* device_impl = device;
-	return hid_get_serial_number_string(device_impl->device, serial_number_buffer, serial_number_buffer_length) == 0;
+	return hid_get_serial_number_string(device_impl->device, serial_number, serial_number_length) == 0;
 }
 
-bool scdk_read_key(scdk_device_t device, bool* key_state_buffer, size_t key_state_buffer_length)
+int scdk_read_key(scdk_device_t device, bool* key_state_buffer, size_t key_state_buffer_length)
 {
 	const scdk_device_impl_t* device_impl = device;
 
-	const size_t bytes = hid_read(device_impl->device, device_impl->hid_in_report_buffer,
+	const int bytes = hid_read(device_impl->device, device_impl->hid_in_report_buffer,
 	                                   SD_IN_REPORT_LENGTH);
 	if (bytes == -1)
-		return false;
+		return -1;
 
-	for (size_t i = SD_IN_REPORT_HEADER_LENGTH; i < bytes && i - SD_IN_REPORT_HEADER_LENGTH < key_state_buffer_length; ++i)
+	for (int i = SD_IN_REPORT_HEADER_LENGTH; i < bytes && i - SD_IN_REPORT_HEADER_LENGTH < (int)key_state_buffer_length; ++i)
 		key_state_buffer[i - SD_IN_REPORT_HEADER_LENGTH] = device_impl->hid_in_report_buffer[i] > 0;
 
-	return true;
+	return bytes;
 }
 
-bool scdk_read_key_timeout(scdk_device_t device, bool* key_state_buffer, size_t key_state_buffer_length, int timeout_ms)
+int scdk_read_key_timeout(scdk_device_t device, bool* key_state_buffer, size_t key_state_buffer_length, int timeout_ms)
 {
 	const scdk_device_impl_t* device_impl = device;
 
-	const size_t bytes = hid_read_timeout(device_impl->device, device_impl->hid_in_report_buffer,
+	const int bytes = hid_read_timeout(device_impl->device, device_impl->hid_in_report_buffer,
 	                                   SD_IN_REPORT_LENGTH, timeout_ms);
 	if (bytes == -1)
-		return false;
+		return -1;
 
-	for (size_t i = SD_IN_REPORT_HEADER_LENGTH; i < bytes && i - SD_IN_REPORT_HEADER_LENGTH < key_state_buffer_length; ++i)
+	for (int i = SD_IN_REPORT_HEADER_LENGTH; i < bytes && i - SD_IN_REPORT_HEADER_LENGTH < (int)key_state_buffer_length; ++i)
 		key_state_buffer[i - SD_IN_REPORT_HEADER_LENGTH] = device_impl->hid_in_report_buffer[i] > 0;
 
-	return true;
+	return bytes;
 }
 
 bool scdk_set_image(scdk_device_t device, const unsigned char* image_buffer,

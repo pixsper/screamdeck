@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
 	fclose(file);
 
 	wchar_t serial_number[32];
-	scdk_get_serial_number(device, serial_number, sizeof(serial_number));
+	scdk_get_serial_number(device, serial_number, 32);
 
 	scdk_set_brightness(device, 100);
 
@@ -55,19 +55,25 @@ int main(int argc, char* argv[])
 	bool keys[SCDK_KEY_GRID_WIDTH * SCDK_KEY_GRID_HEIGHT] = {0};
 	while(true)
 	{
-		bool keysBuffer[SCDK_KEY_GRID_WIDTH * SCDK_KEY_GRID_HEIGHT] = {0};
-		scdk_read_key(device, keysBuffer, SCDK_KEY_GRID_WIDTH * SCDK_KEY_GRID_HEIGHT);
-
-		for(int i = 0; i < SCDK_KEY_GRID_WIDTH * SCDK_KEY_GRID_HEIGHT; ++i)
+		bool keys_buffer[SCDK_KEY_GRID_WIDTH * SCDK_KEY_GRID_HEIGHT] = {0};
+		const int result = scdk_read_key_timeout(device, keys_buffer, SCDK_KEY_GRID_WIDTH * SCDK_KEY_GRID_HEIGHT, 1000 / 60);
+		if (result == -1)
 		{
-			if (keys[i] != keysBuffer[i])
+			break;
+		}
+		else if (result > 0)
+		{
+			for(int i = 0; i < SCDK_KEY_GRID_WIDTH * SCDK_KEY_GRID_HEIGHT; ++i)
 			{
-				if (keys[i])
-					printf("Key %d down\n", i);
-				else
-					printf("Key %d up\n", i);
+				if (keys[i] != keys_buffer[i])
+				{
+					if (keys[i])
+						printf("Key %d down\n", i);
+					else
+						printf("Key %d up\n", i);
 
-				keys[i] = keysBuffer[i];
+					keys[i] = keys_buffer[i];
+				}
 			}
 		}
 	}

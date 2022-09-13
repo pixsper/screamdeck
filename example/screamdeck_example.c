@@ -43,7 +43,8 @@ int main(int argc, char* argv[])
 
 	fclose(file);
 
-
+	wchar_t serial_number[32];
+	scdk_get_serial_number(device, serial_number, sizeof(serial_number));
 
 	scdk_set_brightness(device, 100);
 

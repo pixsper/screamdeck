@@ -13,7 +13,7 @@
 #define SD_OUT_REPORT_HEADER_LENGTH 8
 #define SD_OUT_REPORT_IMAGE_LENGTH (SD_OUT_REPORT_LENGTH - SD_OUT_REPORT_HEADER_LENGTH)
 #define SD_IN_REPORT_HEADER_LENGTH 4
-#define SD_IN_REPORT_LENGTH (SCDK_KEY_GRID_WIDTH * SCDK_KEY_GRID_HEIGHT) + SD_IN_REPORT_HEADER_LENGTH
+#define SD_IN_REPORT_LENGTH ((SCDK_KEY_GRID_WIDTH * SCDK_KEY_GRID_HEIGHT) + SD_IN_REPORT_HEADER_LENGTH)
 
 #define SCDK_MAX(a, b) a > b ? a : b
 #define SCDK_MIN(a, b) a < b ? a : b
@@ -143,7 +143,7 @@ bool scdk_read_key(scdk_device_t device, bool* key_state_buffer, size_t key_stat
 	if (bytes == -1)
 		return false;
 
-	for (size_t i = SD_IN_REPORT_HEADER_LENGTH; i < bytes && i + SD_IN_REPORT_HEADER_LENGTH < key_state_buffer_length; ++i)
+	for (size_t i = SD_IN_REPORT_HEADER_LENGTH; i < bytes && i - SD_IN_REPORT_HEADER_LENGTH < key_state_buffer_length; ++i)
 		key_state_buffer[i - SD_IN_REPORT_HEADER_LENGTH] = device_impl->hid_in_report_buffer[i] > 0;
 
 	return true;
@@ -158,7 +158,7 @@ bool scdk_read_key_timeout(scdk_device_t device, bool* key_state_buffer, size_t 
 	if (bytes == -1)
 		return false;
 
-	for (size_t i = SD_IN_REPORT_HEADER_LENGTH; i < bytes && i + SD_IN_REPORT_HEADER_LENGTH < key_state_buffer_length; ++i)
+	for (size_t i = SD_IN_REPORT_HEADER_LENGTH; i < bytes && i - SD_IN_REPORT_HEADER_LENGTH < key_state_buffer_length; ++i)
 		key_state_buffer[i - SD_IN_REPORT_HEADER_LENGTH] = device_impl->hid_in_report_buffer[i] > 0;
 
 	return true;

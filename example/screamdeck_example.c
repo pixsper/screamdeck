@@ -51,6 +51,26 @@ int main(int argc, char* argv[])
 	scdk_set_image(device, buffer, SCDK_PIXEL_FORMAT_RGB, 100);
 
 	scdk_set_image(device, buffer, SCDK_PIXEL_FORMAT_RGB, 100);
+	
+	bool keys[SCDK_KEY_GRID_WIDTH * SCDK_KEY_GRID_HEIGHT] = {0};
+	while(true)
+	{
+		bool keysBuffer[SCDK_KEY_GRID_WIDTH * SCDK_KEY_GRID_HEIGHT] = {0};
+		scdk_read_key(device, keysBuffer, SCDK_KEY_GRID_WIDTH * SCDK_KEY_GRID_HEIGHT);
+
+		for(int i = 0; i < SCDK_KEY_GRID_WIDTH * SCDK_KEY_GRID_HEIGHT; ++i)
+		{
+			if (keys[i] != keysBuffer[i])
+			{
+				if (keys[i])
+					printf("Key %d down\n", i);
+				else
+					printf("Key %d up\n", i);
+
+				keys[i] = keysBuffer[i];
+			}
+		}
+	}
 
 	scdk_free(device);
 

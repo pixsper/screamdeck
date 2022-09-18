@@ -11,11 +11,24 @@ env:
 
 jobs:
   build:
-    name: Build ${{ matrix.os }} 
+    name: Build ${{ matrix.os }} ${{ matrix.arch }} 
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [windows-latest, macOS-latest, ubuntu-latest]
+        include:
+        - os: windows-latest
+          arch: x64
+        - os: macos-latest
+          arch: x64
+        - os: ubuntu-latest
+          arch: x64
+        - os: ubuntu-latest
+          arch: arm64
+          raspios: raspios_lite_arm64:latest
+        - os: ubuntu-latest
+          arch: arm
+          raspios: raspios_lite:latest
 
     steps:
     - name: Checkout
@@ -23,41 +36,59 @@ jobs:
       with:
         submodules: recursive
         fetch-depth: 0
-        
+
+    - name: Setup and Build On RaspiOS
+      if: matrix.raspios != ''
+      uses: pguyot/arm-runner-action@v2
+      id: build_image
+      with:
+        base_image:  ${{ matrix.raspios }} 
+        cpu: cortex-a7
+        import_github_env: true
+        copy_repository_path: ${{github.workspace}}
+        copy_artifact_path: ./build
+        copy_artifact_dest: ${{github.workspace}}/build
+        commands: |
+            sudo apt update
+            sudo apt-get install -y python3-pip libudev-dev cmake
+            sudo pip3 install conan
+            cmake -B ./build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+            cmake --build ./build --config ${{env.BUILD_TYPE}} --target screamdeck
+            
     - name: Install Package
-      if: runner.os == 'Linux'
+      if: runner.os == 'Linux' && matrix.raspios == ''
       run: |
         sudo apt-get update
         sudo apt-get install -y libudev-dev
         
     - name: Install Conan
+      if: matrix.raspios == ''
       uses: turtlebrowser/get-conan@v1.0
 
     - name: Configure CMake
+      if: matrix.raspios == ''
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
     - name: Build
+      if: matrix.raspios == ''
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target screamdeck
 
     - name: Upload Built Package
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
-        name: ${{ matrix.os }} package
+        name: ${{ matrix.os }}_${{ matrix.arch }}_package
         path: |
           include/*.h
           **/*.dll
           **/*.dylib
           **/*.so
-              
+        if-no-files-found: error
+        
   package:
     name: Package
     runs-on: ubuntu-latest
     needs: [build]
     steps:
-      - name: Set Variables
-        id: vars
-        run: echo "::set-output name=sha_short::$(${GITHUB_SHA::7})"
-    
       - name: Download All Packages
         uses: actions/download-artifact@v2
           
@@ -65,19 +96,28 @@ jobs:
         uses: geekyeggo/delete-artifact@v1
         with:
           name: |
-            windows-latest package
-            macOS-latest package
-            ubuntu-latest package
+            windows-latest_x64_package
+            macos-latest_x64_package
+            ubuntu-latest_x64_package
+            ubuntu-latest_arm64_package
+            ubuntu-latest_arm_package
       
       - name: Copy To Staging Directory
         run: |
-          sudo mkdir -p package/screamdeck
-          sudo rsync -avhu "windows-latest package/" package/screamdeck
-          sudo rsync -avhu "macOS-latest package/" package/screamdeck
-          sudo rsync -avhu "ubuntu-latest package/" package/screamdeck
+          mkdir -p ~/package/screamdeck
+          mkdir -p ~/package/screamdeck/bin/win_x64
+          cp -r windows-latest_x64_package/build/* ~/package/screamdeck/bin/win_x64
+          mkdir -p ~/package/screamdeck/bin/macos_x64
+          cp macos-latest_x64_package/build/* ~/package/screamdeck/bin/macos_x64
+          mkdir -p ~/package/screamdeck/bin/linux_x64
+          cp ubuntu-latest_x64_package/build/* ~/package/screamdeck/bin/linux_x64
+          mkdir -p ~/package/screamdeck/bin/linux_arm64
+          cp ubuntu-latest_arm64_package/build/* ~/package/screamdeck/bin/linux_arm64
+          mkdir -p ~/package/screamdeck/bin/linux_arm
+          cp ubuntu-latest_arm_package/build/* ~/package/screamdeck/bin/linux_arm
           
       - name: Upload Combined Packages
         uses: actions/upload-artifact@v2
         with:
-          name: screamdeck_${{github.ref_name}}_${{steps.vars.outputs.sha_short}}
-          path: package
+          name: screamdeck_${{github.ref_name}}_${{github.sha}}
+          path: ~/package

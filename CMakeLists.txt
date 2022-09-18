@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.18)
 project(screamdeck VERSION 0.1.0 DESCRIPTION "C library for fast output to Elgato Streamdeck display")
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR})

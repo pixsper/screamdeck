@@ -7,14 +7,14 @@
 #ifdef screamdeck_EXPORTS
 #ifdef _MSC_VER
 #define DLL_API __declspec(dllexport)
-#elif defined __GNUC__
-#define DLL_API __attribute__ ((visibility("default")))
+#else
+#define DLL_API
 #endif
 #else
 #ifdef _MSC_VER
 #define DLL_API __declspec(dllimport)
-#elif defined __GNUC__
-#define DLL_API __attribute__ ((visibility ("hidden")))
+#else
+#define DLL_API
 #endif
 #endif
 

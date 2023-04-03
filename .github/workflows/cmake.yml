@@ -32,7 +32,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         submodules: recursive
         fetch-depth: 0
@@ -51,7 +51,7 @@ jobs:
         commands: |
             sudo apt update
             sudo apt-get install -y python3-pip libudev-dev cmake
-            sudo pip3 install conan
+            sudo pip3 install --force-reinstall -v "conan==1.58.0"
             cmake -B ./build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
             cmake --build ./build --config ${{env.BUILD_TYPE}} --target screamdeck
             
@@ -63,7 +63,9 @@ jobs:
         
     - name: Install Conan
       if: matrix.raspios == ''
-      uses: turtlebrowser/get-conan@v1.0
+      uses: turtlebrowser/get-conan@v1.2
+      with:
+        version: 1.58.0
 
     - name: Configure CMake
       if: matrix.raspios == ''

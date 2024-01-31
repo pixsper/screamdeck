@@ -18,24 +18,40 @@
 #endif
 #endif
 
-#define SCDK_IMAGE_WIDTH 1034
-#define SCDK_IMAGE_HEIGHT 498
-
-#define SCDK_KEY_IMAGE_HEIGHT 96
-#define SCDK_KEY_IMAGE_WIDTH 96
-#define SCDK_KEY_GAP_WIDTH 38
-
-#define SCDK_KEY_GRID_WIDTH 8
-#define SCDK_KEY_GRID_HEIGHT 4
-
+typedef enum scdk_device_type_e
+{
+	SCDK_DEVICE_TYPE_NONE = 0,
+	SCDK_DEVICE_TYPE_ORIGINAL = 0x0060,
+	SCDK_DEVICE_TYPE_ORIGINAL_MK2 = 0x006d,
+	SCDK_DEVICE_TYPE_MK2 = 0x0080,
+	SCDK_DEVICE_TYPE_MINI = 0x0063,
+	SCDK_DEVICE_TYPE_MINI_MK2 = 0x0090,
+	SCDK_DEVICE_TYPE_XL = 0x006c,
+	SCDK_DEVICE_TYPE_XL_MK2 = 0x008f
+} scdk_device_type_e;
 
 typedef struct scdk_device_info_t
 {
 	wchar_t* serial_number;
+	scdk_device_type_e device_type;
 
 	struct scdk_device_info_t* next;
 
 } scdk_device_info_t;
+
+typedef struct scdk_device_type_info_t
+{
+	scdk_device_type_e device_type;
+	int columns;
+	int rows;
+	int key_image_width;
+	int key_image_height;
+	int key_gap_width;
+	int key_gap_height;
+	int image_width;
+	int image_height;
+
+} scdk_device_type_info_t;
 
 typedef void* scdk_device_t;
 
@@ -54,14 +70,19 @@ typedef enum scdk_pixel_format_e
 
 } scdk_pixel_format_e;
 
+DLL_API const scdk_device_type_info_t* scdk_get_device_type_info_from_type(scdk_device_type_e device_type);
 
 DLL_API scdk_device_info_t* scdk_enumerate(void);
 
 DLL_API void scdk_free_enumeration(scdk_device_info_t* devices);
 
-DLL_API bool scdk_open(scdk_device_t* p_device, const wchar_t* serial_number);
+DLL_API bool scdk_open(scdk_device_t* p_device, scdk_device_type_e device_type, const wchar_t* serial_number);
+
+DLL_API bool scdk_open_first(scdk_device_t* p_device, scdk_device_type_e device_type);
 
 DLL_API void scdk_free(scdk_device_t device);
+
+DLL_API const scdk_device_type_info_t* scdk_get_device_type_info(scdk_device_t device);
 
 DLL_API bool scdk_get_serial_number(scdk_device_t device, wchar_t* serial_number_buffer, size_t serial_number_buffer_length);
 

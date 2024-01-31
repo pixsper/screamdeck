@@ -1,70 +1,49 @@
-cmake_minimum_required(VERSION 3.16.3)
-project(screamdeck VERSION 0.1.0 DESCRIPTION "C library for fast output to Elgato Streamdeck display")
+cmake_minimum_required(VERSION 3.24)
+project(screamdeck LANGUAGES C VERSION 0.2.0 DESCRIPTION "C library for fast output to Elgato Streamdeck display")
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR})
-list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR})
+# Annoyingly the conan hidapi recipe doesn't currently support static builds for Windows, so we include via git submodule
+set(BUILD_SHARED_LIBS FALSE)
+add_subdirectory(lib/hidapi)
 
-if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
-  message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
-  file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/0.18.1/conan.cmake"
-                "${CMAKE_BINARY_DIR}/conan.cmake"
-                EXPECTED_HASH SHA256=5cdb3042632da3efff558924eecefd580a0e786863a857ca097c3d1d43df5dcd
-                TLS_VERIFY ON)
-endif()
+find_package(libjpeg-turbo REQUIRED)
+find_package(xxHash REQUIRED)
 
-include(${CMAKE_BINARY_DIR}/conan.cmake)
+add_library(${PROJECT_NAME} SHARED)
 
-conan_cmake_configure(REQUIRES hidapi/0.13.1
-							   libjpeg-turbo/2.1.5
-							   xxhash/0.8.1
-					  IMPORTS "bin, *.dll -> ./"
-					  GENERATORS cmake_find_package
-					  OPTIONS )
+set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties(${PROJECT_NAME} PROPERTIES SOVERSION 1)
+set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER include/screamdeck.h)
 
-conan_cmake_autodetect(settings)
-
-conan_cmake_install(PATH_OR_REFERENCE .
-                    BUILD missing
-                    REMOTE conancenter
-                    SETTINGS ${settings})
-
-find_package(hidapi)
-find_package(JPEG)
-find_package(xxHash)
-
-add_library(screamdeck SHARED)
-
-set_target_properties(screamdeck PROPERTIES VERSION ${PROJECT_VERSION})
-set_target_properties(screamdeck PROPERTIES SOVERSION 1)
-set_target_properties(screamdeck PROPERTIES PUBLIC_HEADER include/screamdeck.h)
-
-target_include_directories(screamdeck PUBLIC
+target_include_directories(${PROJECT_NAME} PUBLIC
 	"include"
 )
 
-target_sources(screamdeck PRIVATE
-	"src/screamdeck.c"
-	"example/screamdeck_example.c")
+target_include_directories(${PROJECT_NAME} PRIVATE
+	"lib/hidapi"
+)
 
-target_link_libraries(screamdeck PRIVATE JPEG::turbojpeg-static xxHash::xxhash)
+target_sources(${PROJECT_NAME} PRIVATE
+	"src/screamdeck.c")
+
+target_link_libraries(${PROJECT_NAME} PRIVATE libjpeg-turbo::turbojpeg-static xxHash::xxhash)
 
 if(UNIX AND NOT APPLE)
-	target_link_libraries(screamdeck PRIVATE hidapi::hidraw)
+	target_link_libraries(${PROJECT_NAME} PRIVATE hidapi::hidraw)
 else()
-	target_link_libraries(screamdeck PRIVATE hidapi::hidapi)
+	target_link_libraries(${PROJECT_NAME} PRIVATE hidapi::hidapi)
 endif()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-	target_link_options(screamdeck PRIVATE "-Wl,--exclude-libs,ALL")
+	target_link_options(${PROJECT_NAME} PRIVATE "-Wl,--exclude-libs,ALL")
 endif()
 
-add_executable(screamdeck_example)
+add_executable(${PROJECT_NAME}_example)
 
-target_link_libraries(screamdeck_example PUBLIC JPEG::turbojpeg-static screamdeck)
+target_link_libraries(${PROJECT_NAME}_example PUBLIC libjpeg-turbo::turbojpeg-static screamdeck)
 
 if(UNIX AND NOT APPLE)
-	target_link_libraries(screamdeck_example PRIVATE udev)
+	target_link_libraries(${PROJECT_NAME}_example PRIVATE udev)
 endif()
 
-target_sources(screamdeck_example PRIVATE
+target_sources(${PROJECT_NAME}_example PRIVATE
 	"example/screamdeck_example.c")

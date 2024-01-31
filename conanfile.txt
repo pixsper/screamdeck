@@ -1,0 +1,7 @@
+[requires]
+libjpeg-turbo/3.0.1
+xxhash/0.8.2
+
+[generators]
+CMakeDeps
+CMakeToolchain

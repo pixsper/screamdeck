@@ -5,17 +5,19 @@
 
 int main(int argc, char* argv[])
 {
-	scdk_device_t device;
+	scdk_device_t device = NULL;
 	unsigned char* buffer;
 
 	scdk_device_info_t* devices = scdk_enumerate();
 	scdk_free_enumeration(devices);
 
-	scdk_open(&device, NULL);
+	scdk_open_first(&device, SCDK_DEVICE_TYPE_XL);
 	if (device == NULL)
 		return -1;
 
-	buffer = malloc(SCDK_IMAGE_WIDTH * SCDK_IMAGE_HEIGHT * 3);
+	const scdk_device_type_info_t* type_info = scdk_get_device_type_info(device);
+
+	buffer = malloc(type_info->image_width * type_info->image_height * 3);
 	if (buffer == NULL)
 		return -1;
 
@@ -23,7 +25,7 @@ int main(int argc, char* argv[])
 
 
 	unsigned long file_length;
-	FILE* file = fopen("../../../example/test.jpg", "rb");
+	FILE* file = fopen("../example/test.jpg", "rb");
 	if (!file)
 		return -1;
 
@@ -39,7 +41,7 @@ int main(int argc, char* argv[])
 
 
 	int result = tjDecompress2(handle, file_buffer, file_length, buffer,
-		SCDK_IMAGE_WIDTH, SCDK_IMAGE_WIDTH * 3, SCDK_IMAGE_HEIGHT, TJPF_RGB, 0);
+		type_info->image_width, type_info->image_width * 3, type_info->image_height, TJPF_RGB, 0);
 
 	fclose(file);
 
@@ -50,20 +52,18 @@ int main(int argc, char* argv[])
 
 	scdk_set_image(device, buffer, SCDK_PIXEL_FORMAT_RGB, 100);
 
-	scdk_set_image(device, buffer, SCDK_PIXEL_FORMAT_RGB, 100);
-	
-	bool keys[SCDK_KEY_GRID_WIDTH * SCDK_KEY_GRID_HEIGHT] = {0};
+	bool* keys = (bool*)calloc(type_info->columns * type_info->rows, sizeof(bool));
+	bool* keys_buffer = (bool*)calloc(type_info->columns * type_info->rows, sizeof(bool));
 	while(true)
 	{
-		bool keys_buffer[SCDK_KEY_GRID_WIDTH * SCDK_KEY_GRID_HEIGHT] = {0};
-		const int result = scdk_read_key_timeout(device, keys_buffer, SCDK_KEY_GRID_WIDTH * SCDK_KEY_GRID_HEIGHT, 1000 / 60);
-		if (result == -1)
+		const int key_result = scdk_read_key_timeout(device, keys_buffer, type_info->columns * type_info->rows, 1000 / 60);
+		if (key_result == -1)
 		{
 			break;
 		}
-		else if (result > 0)
+		else if (key_result == 0)
 		{
-			for(int i = 0; i < SCDK_KEY_GRID_WIDTH * SCDK_KEY_GRID_HEIGHT; ++i)
+			for(int i = 0; i < type_info->columns * type_info->rows; ++i)
 			{
 				if (keys[i] != keys_buffer[i])
 				{
@@ -77,6 +77,8 @@ int main(int argc, char* argv[])
 			}
 		}
 	}
+	free(keys);
+	free(keys_buffer);
 
 	scdk_free(device);
 

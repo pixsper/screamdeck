@@ -11,5 +11,8 @@ CTestTestfile.cmake
 _deps
 .vs
 out
+build
 cmake-build-debug
 cmake-build-release
+CMakeUserPresets.json
+/conan_provider.cmake

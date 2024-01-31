@@ -14,7 +14,7 @@ jobs:
     name: Build ${{ matrix.os }} ${{ matrix.arch }} 
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         include:
         - os: windows-latest
@@ -32,7 +32,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: recursive
         fetch-depth: 0
@@ -45,38 +45,50 @@ jobs:
         base_image:  ${{ matrix.raspios }} 
         cpu: cortex-a7
         import_github_env: true
+        optimize_image: false
+        image_additional_mb: 128
         copy_repository_path: ${{github.workspace}}
         copy_artifact_path: ./build
         copy_artifact_dest: ${{github.workspace}}/build
         commands: |
             sudo apt update
-            sudo apt-get install -y python3-pip libudev-dev cmake
-            sudo pip3 install --force-reinstall -v "conan==1.58.0"
-            cmake -B ./build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-            cmake --build ./build --config ${{env.BUILD_TYPE}} --target screamdeck
+            sudo apt-get install -y pipx libudev-dev libusb-1.0-0-dev cmake
+            pipx install conan
+            conan profile detect --force
+            conan install . --output-folder=build --build=missing
+            cmake . -B "build" -DCMAKE_TOOLCHAIN_FILE="build/conan_toolchain.cmake" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+            cmake --build "build" --target screamdeck
             
     - name: Install Package
       if: runner.os == 'Linux' && matrix.raspios == ''
       run: |
         sudo apt-get update
-        sudo apt-get install -y libudev-dev
+        sudo apt-get install -y libudev-dev libusb-1.0-0-dev
         
     - name: Install Conan
       if: matrix.raspios == ''
       uses: turtlebrowser/get-conan@v1.2
-      with:
-        version: 1.58.0
 
-    - name: Configure CMake
+    - name: Acquire/Build Conan Dependencies
       if: matrix.raspios == ''
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      run: |
+        conan profile detect --force
+        conan install ${{github.workspace}} --output-folder=build --build=missing
 
-    - name: Build
-      if: matrix.raspios == ''
-      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target screamdeck
+    - name: Configure & Build (Windows)
+      if: runner.os == 'Windows' && matrix.raspios == ''
+      run: |
+        cmake . -B "build" -G "Visual Studio 17 2022" -DCMAKE_TOOLCHAIN_FILE="build/conan_toolchain.cmake"
+        cmake --build "build" --target screamdeck --config ${{env.BUILD_TYPE}}
+        
+    - name: Configure & Build (Posix)
+      if: runner.os != 'Windows' && matrix.raspios == ''
+      run: |
+        cmake . -B "build" -DCMAKE_TOOLCHAIN_FILE="build/conan_toolchain.cmake" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+        cmake --build "build" --target screamdeck
 
     - name: Upload Built Package
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.os }}_${{ matrix.arch }}_package
         path: |
@@ -92,10 +104,10 @@ jobs:
     needs: [build]
     steps:
       - name: Download All Packages
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
           
       - name: Delete Package Artifacts
-        uses: geekyeggo/delete-artifact@v1
+        uses: geekyeggo/delete-artifact@v4
         with:
           name: |
             windows-latest_x64_package
@@ -119,7 +131,7 @@ jobs:
           cp ubuntu-latest_arm_package/build/* ~/package/screamdeck/bin/linux_arm
           
       - name: Upload Combined Packages
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: screamdeck_${{github.ref_name}}_${{github.sha}}
           path: ~/package
